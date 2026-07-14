@@ -1,48 +1,60 @@
 const Submission = require("../models/Submission");
+const Problem = require("../models/Problem");
+const TestCase = require("../models/TestCase");
+const judgeService = require("../services/judgeService");
 
-//create submission
 const createSubmission = async (req, res) => {
-  try {
-    const submission = await Submission.create(req.body);
-    res.status(201).json(submission);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    try {
+        const { userId, problemId, language, code } = req.body;
 
-//get all submissions
-const getSubmissions = async (req, res) => {
-  try {
-    const submissions = await Submission.find();
-    res.json(submissions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+        // Check problem exists
+        const problemData = await Problem.findById(problemId);
 
-//get individual submission
-const getSubmissionById = async (req, res) => {
-  try {
-    const submission = await Submission.findById(req.params.id);
+        if (!problemData) {
+            return res.status(404).json({
+                success: false,
+                message: "Problem not found"
+            });
+        }
 
-    if (!submission) {
-      return res.status(404).json({ message: "Submission not found" });
+        // Get all test cases
+        const testCases = await TestCase.find({ problemId });
+
+        if (testCases.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No test cases found"
+            });
+        }
+
+        // Judge the submission
+        const result = await judgeService(language, code, testCases);
+
+        // Save submission
+        const submission = await Submission.create({
+          user: userId,
+          problem: problemId,
+          language,
+          code,
+          verdict: result.verdict,
+          executionTime: result.executionTime || 0
+});
+
+        return res.status(201).json({
+            success: true,
+            submission
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
-
-    res.json(submission);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 };
 
-//delete submission
-const deleteSubmission = async (req, res) => {
-  try {
-    await Submission.findByIdAndDelete(req.params.id);
-    res.json({ message: "Submission deleted" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+module.exports = {
+    createSubmission
 };
-
-module.exports = {createSubmission, getSubmissions, getSubmissionById, deleteSubmission};
