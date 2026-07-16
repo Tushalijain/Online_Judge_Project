@@ -7,23 +7,25 @@ const problemRoutes = require("./routes/problemRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
 const testCaseRoutes = require("./routes/testCaseRoutes");
 const executeRoutes = require("./routes/executeRoutes");
+const compilerRoutes = require("./routes/compilerRoutes");
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(
-    cors({
-        origin: "https://localhost:5173",
-        credentials: true
-    })
-);
+
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/problems", problemRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/testcases", testCaseRoutes);
 app.use("/api/execute", executeRoutes);
+app.use("/api/compiler", compilerRoutes);
 
 module.exports = app;

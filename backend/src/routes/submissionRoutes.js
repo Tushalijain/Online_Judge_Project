@@ -3,8 +3,11 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    createSubmission
+    createSubmission,
+    getSubmissions
 } = require("../controllers/submissionController");
+
+router.get("/", getSubmissions);
 
 router.post("/", createSubmission);
 

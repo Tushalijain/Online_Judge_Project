@@ -55,6 +55,22 @@ const createSubmission = async (req, res) => {
     }
 };
 
+const getSubmissions = async (req, res) => {
+    try {
+        const submissions = await Submission.find()
+            .populate("user", "name email")
+            .populate("problem", "title");
+
+        return res.status(200).json(submissions);
+
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
-    createSubmission
+    createSubmission,
+    getSubmissions
 };
