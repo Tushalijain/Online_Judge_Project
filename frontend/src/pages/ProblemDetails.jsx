@@ -2,6 +2,40 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import Editor from "@monaco-editor/react";
+
+const templates = {
+  python: `def solve():
+    pass
+
+    if __name__ == "__main__":
+        solve()
+    `,
+
+      cpp: `#include <bits/stdc++.h>
+    using namespace std;
+
+    int main() {
+
+        return 0;
+    }
+    `,
+
+      c: `#include <stdio.h>
+
+    int main() {
+
+        return 0;
+    }
+    `,
+
+      java: `public class Main {
+        public static void main(String[] args) {
+
+        }
+    }
+    `
+};
 
 function ProblemDetails() {
   const { id } = useParams();
@@ -11,10 +45,22 @@ function ProblemDetails() {
   const [code, setCode] = useState("");
   const [customInput, setCustomInput] = useState("");
   const [output, setOutput] = useState("");
+  const [savedCodes, setSavedCodes] = useState({
+  python: templates.python,
+  cpp: templates.cpp,
+  c: templates.c,
+  java: templates.java,
+});
+
+  
 
   useEffect(() => {
     fetchProblem();
   }, []);
+
+  useEffect(() => {
+  setCode(templates.python);
+}, []);
 
   const fetchProblem = async () => {
     try {
@@ -88,174 +134,197 @@ Execution Time: ${response.data.submission.executionTime} ms`
   }
 };
 
+const getVerdictColor = () => {
+  if (output.includes("Accepted"))
+    return "border-green-500 text-green-500";
+
+  if (output.includes("Wrong Answer"))
+    return "border-red-500 text-red-500";
+
+  if (output.includes("Compilation Error"))
+    return "border-yellow-500 text-yellow-500";
+
+  if (output.includes("Runtime Error"))
+    return "border-orange-500 text-orange-500";
+
+  if (output.includes("Time Limit Exceeded"))
+    return "border-purple-500 text-purple-500";
+
+  return "border-gray-400 text-green-400";
+};
+
   if (!problem) {
     return <h2 className="text-center mt-10">Loading...</h2>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="bg-white rounded-lg shadow p-8">
-        <h1 className="text-4xl font-bold mb-6">{problem.title}</h1>
+  <>
+    <Navbar />
 
-        <h2 className="text-xl font-semibold mb-2">
-          Problem Statement
-        </h2>
+    <div className="min-h-screen bg-gray-100 p-6">
 
-        <p className="mb-6">{problem.statement}</p>
+      <div className="grid grid-cols-2 gap-6">
 
-        <h2 className="text-xl font-semibold mb-2">
-          Difficulty
-        </h2>
+        {/* LEFT PANEL */}
+        <div className="bg-white rounded-lg shadow p-6 h-[85vh] overflow-y-auto">
 
-        <p className="mb-6">{problem.difficulty}</p>
+          <h1 className="text-4xl font-bold mb-6">
+            {problem.title}
+          </h1>
 
-        <h2 className="text-xl font-semibold mb-2">
-          Constraints
-        </h2>
+          <h2 className="text-xl font-semibold mb-2">
+            Problem Statement
+          </h2>
 
-        <p>{problem.constraints}</p>
+          <p className="mb-6">
+            {problem.statement}
+          </p>
+
+          <h2 className="text-xl font-semibold mb-2">
+            Difficulty
+          </h2>
+
+          <p className="mb-6">
+            {problem.difficulty}
+          </p>
+
+          <h2 className="text-xl font-semibold mb-2">
+            Constraints
+          </h2>
+
+          <p>
+            {problem.constraints}
+          </p>
+
+        </div>
+
+        {/* RIGHT PANEL */}
+
+        <div className="bg-white rounded-lg shadow p-6 flex flex-col h-[85vh]">
+
+          <label className="font-semibold mb-2">
+            Language
+          </label>
+
+          <select
+            value={language}
+            onChange={(e) => {
+              const selectedLanguage = e.target.value;
+              setLanguage(selectedLanguage);
+              setCode(savedCodes[selectedLanguage]);
+            }}
+            className="border rounded-lg p-2 mb-4"
+          >
+            <option value="python">Python</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="java">Java</option>
+          </select>
+
+          <Editor
+            height="450px"
+            language={language}
+            theme="vs-dark"
+            value={code}
+            onChange={(value) => {
+              const newCode = value || "";
+              setCode(newCode);
+
+              setSavedCodes((prev) => ({
+                ...prev,
+                [language]: newCode,
+              }));
+            }}
+            options={{
+              fontSize: 16,
+              minimap: { enabled: false },
+              automaticLayout: true,
+              wordWrap: "on",
+              tabSize: 4,
+            }}
+          />
+
+        </div>
+
       </div>
 
-      {/* Language */}
-      <div className="mt-8">
-        <label className="block font-semibold mb-2">
-          Language
-        </label>
+     
 
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="border rounded-lg p-2"
-        >
-          <option value="python">Python</option>
-          <option value="cpp">C++</option>
-          <option value="c">C</option>
-          <option value="java">Java</option>
-        </select>
-      </div>
+ <div className="grid grid-cols-2 gap-6 mt-6">
 
-      {/* Code */}
-      <div className="mt-6">
-        <label className="block font-semibold mb-2">
-          Code
-        </label>
+  {/* Custom Input */}
 
-        <textarea
-          rows="15"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Write your code here..."
-          className="w-full border rounded-lg p-3 font-mono"
-        />
-      </div>
+  <div className="bg-white rounded-lg shadow p-4">
 
-      {/* Custom Input */}
-      <div className="mt-6">
-        <label className="block font-semibold mb-2">
-          Custom Input
-        </label>
+    <h2 className="text-lg font-semibold mb-3">
+      Custom Input
+    </h2>
 
-        <textarea
-          rows="3"
-          value={customInput}
-          onChange={(e) => setCustomInput(e.target.value)}
-          className="w-full border rounded-lg p-3"
-        />
-      </div>
+    <textarea
+      rows="8"
+      value={customInput}
+      onChange={(e) => setCustomInput(e.target.value)}
+      className="w-full border rounded-lg p-3"
+      placeholder="Enter custom input..."
+    />
 
-      {/* Buttons */}
-      <div className="mt-6 flex gap-4">
-        <button
-          onClick={runCode}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
-        >
-          Run Code
-        </button>
+  </div>
 
-        <button
-          onClick={submitCode}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-        >
-          Submit Code
-        </button>
-      </div>
+  {/* Output */}
 
-      {/* Output */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">
-          Output
-        </h2>
+  <div className="bg-white rounded-lg shadow p-4">
 
-        <pre className="bg-black text-green-400 p-4 rounded-lg min-h-[120px] whitespace-pre-wrap">
-          {output}
-        </pre>
-      </div>
-    </div>
-  );
+    <h2 className="text-lg font-semibold mb-3">
+      Output
+    </h2>
 
-  return (
+    <div
+  className={`rounded-lg border-2 p-5 min-h-[180px] ${getVerdictColor()}`}
+>
+  {output ? (
     <>
-      <Navbar />
+      <h3 className="text-2xl font-bold mb-4">
+        {output.split("\n")[0]}
+      </h3>
 
-      <div className="min-h-screen bg-gray-100 p-8">
-        <h1 className="text-4xl font-bold mb-2">
-          Welcome, {user?.name} 👋
-        </h1>
-
-        <p className="text-gray-600 mb-8">
-          {user?.email}
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold">Problems</h2>
-            <p className="text-3xl font-bold mt-3">
-              {problems.length}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold">Submissions</h2>
-            <p className="text-3xl font-bold mt-3">
-              {submissions.length}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold">Accepted</h2>
-            <p className="text-3xl font-bold mt-3">
-              {accepted}
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold">Accuracy</h2>
-            <p className="text-3xl font-bold mt-3">
-              {accuracy}%
-            </p>
-          </div>
-
-        </div>
-
-        <div className="mt-8 flex gap-4">
-          <Link
-            to="/problems"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            Solve Problems
-          </Link>
-
-          <Link
-            to="/submissions"
-            className="bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition"
-          >
-            Submission History
-          </Link>
-        </div>
-      </div>
+      <pre className="whitespace-pre-wrap">
+        {output.split("\n").slice(1).join("\n")}
+      </pre>
     </>
-  );
+  ) : (
+    <p className="text-gray-500">
+      Run your code to see the output...
+    </p>
+  )}
+</div>
+
+  </div>
+
+</div>
+
+<div className="flex justify-end gap-4 mt-6">
+
+  <button
+    onClick={runCode}
+    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg"
+  >
+    Run Code
+  </button>
+
+  <button
+    onClick={submitCode}
+    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg"
+  >
+    Submit Code
+  </button>
+
+</div>
+
+    </div>
+  </>
+);
+
+  
   
 }
 
